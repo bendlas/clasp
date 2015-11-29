@@ -223,7 +223,7 @@ $(LIBATOMIC_OPS_SOURCE_DIR)/configure: submodule-libatomic
 libatomic-autoconf: $(LIBATOMIC_OPS_SOURCE_DIR)/configure
 .PHONY: libatomic-autoconf
 
-$(LIBATOMIC_OPS_SOURCE_DIR)/Makefile: libatomic-configure
+$(LIBATOMIC_OPS_SOURCE_DIR)/Makefile: libatomic-autoconf
 	install -d $(CLASP_APP_RESOURCES_LIB_COMMON_DIR);
 	(cd $(LIBATOMIC_OPS_SOURCE_DIR); \
 		export ALL_INTERIOR_PTRS=1; \
