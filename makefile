@@ -157,15 +157,12 @@ all:
 	$(MAKE) asdf
 	$(MAKE) boost_build
 	$(MAKE) boehm
-	(cd src/lisp; $(BJAM) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp gc=boehm bundle )
-	(cd src/main; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/$(VARIANT) gc=boehm $(VARIANT) clasp_install )
-	$(MAKE) -C src/main min-boehm
-	$(MAKE) -C src/main bclasp-boehm-bitcode
-	$(MAKE) -C src/main bclasp-boehm-fasl
-	$(MAKE) -C src/main cclasp-from-bclasp-boehm-bitcode
-#	$(MAKE) -C src/main cclasp-boehm-fasl
-	$(MAKE) -C src/main cclasp-boehm-fasl
-	$(MAKE) -C src/main cclasp-boehm-addons
+	$(MAKE) copy-lisp
+	$(MAKE) boehm-cxx
+	$(MAKE) min-boehm
+	$(MAKE) full-boehm
+	$(MAKE) cclasp-boehm
+	$(MAKE) cclasp-boehm-addons
 	$(MAKE) executable-symlinks
 	echo Clasp is now built
 .PHONY: all
@@ -210,24 +207,51 @@ executable-symlinks:
 	ln -sf ../Contents/execs/mps/debug/bin/clasp $(BINDIR)/clasp_mps_d
 .PHONY: executable-symlinks
 
-libatomic-setup:
+# Ensure that Make does not delete intermediate files in any rule
+.SECONDARY:
+
+submodule-libatomic: .gitmodules
+	-git submodule update --init src/boehm/libatomic_ops
+.PHONY: submodule-libatomic
+
+libatomic-setup: libatomic-configure
+.PHONY: libatomic-setup
+
+$(LIBATOMIC_OPS_SOURCE_DIR)/configure: submodule-libatomic
 	-(cd $(LIBATOMIC_OPS_SOURCE_DIR); autoreconf -vif)
 	-(cd $(LIBATOMIC_OPS_SOURCE_DIR); automake --add-missing )
+libatomic-autoconf: $(LIBATOMIC_OPS_SOURCE_DIR)/configure
+.PHONY: libatomic-autoconf
+
+$(LIBATOMIC_OPS_SOURCE_DIR)/Makefile: libatomic-configure
 	install -d $(CLASP_APP_RESOURCES_LIB_COMMON_DIR);
 	(cd $(LIBATOMIC_OPS_SOURCE_DIR); \
 		export ALL_INTERIOR_PTRS=1; \
 		CFLAGS="-DUSE_MMAP -g" \
 		./configure --enable-shared=yes --enable-static=yes --enable-handle-fork --enable-cplusplus --prefix=$(CLASP_APP_RESOURCES_LIB_COMMON_DIR);)
-.PHONY: libatomic-setup
+libatomic-configure: $(LIBATOMIC_OPS_SOURCE_DIR)/Makefile
+.PHONY: libatomic-configure
 
-libatomic-compile:
+$(CLASP_APP_RESOURCES_LIB_COMMON_DIR)/libatomic_ops.a: libatomic-configure
 	(cd $(LIBATOMIC_OPS_SOURCE_DIR); $(MAKE) -j$(PJOBS) | tee _libatomic_ops.log)
 	(cd $(LIBATOMIC_OPS_SOURCE_DIR); $(MAKE) -j$(PJOBS) install | tee _libatomic_ops_install.log)
+libatomic-compile: $(CLASP_APP_RESOURCES_LIB_COMMON_DIR)/libatomic_ops.a
 .PHONY: libatomic-compile
 
-boehm-setup:
+boehm-setup: boehm-configure
+.PHONY: boehm-setup
+
+submodule-boehm: .gitmodules
+	-git submodule update --init src/boehm/bdwgc
+.PHONY: submodule-boehm
+
+$(BOEHM_SOURCE_DIR)/configure: submodule-boehm
 	-(cd $(BOEHM_SOURCE_DIR); autoreconf -vif)
 	-(cd $(BOEHM_SOURCE_DIR); automake --add-missing )
+boehm-autoconf: $(BOEHM_SOURCE_DIR)/configure
+.PHONY: boehm-autoconf
+
+$(BOEHM_SOURCE_DIR)/Makefile: boehm-autoconf libatomic-compile
 	(cd $(BOEHM_SOURCE_DIR); \
 		export ALL_INTERIOR_PTRS=1; \
                 CC=$(BOEHM_CC) \
@@ -235,22 +259,55 @@ boehm-setup:
                 CFLAGS="-DUSE_MMAP -g" \
 		PKG_CONFIG_PATH=$(CLASP_APP_RESOURCES_LIB_COMMON_DIR)/lib/pkgconfig/ \
 		./configure --enable-shared=yes --enable-static=yes --enable-handle-fork --enable-cplusplus --prefix=$(CLASP_APP_RESOURCES_LIB_COMMON_DIR) --with-libatomic-ops=yes;)
-.PHONY: boehm-setup
+boehm-configure: $(BOEHM_SOURCE_DIR)/Makefile
+.PHONY: boehm-configure
 
-boehm-compile:
+$(CLASP_APP_RESOURCES_LIB_COMMON_DIR)/lib/libgc.a: boehm-configure
 	(cd $(BOEHM_SOURCE_DIR); $(MAKE) -j$(PJOBS) | tee _boehm.log)
 	(cd $(BOEHM_SOURCE_DIR); $(MAKE) -j$(PJOBS) install | tee _boehm_install.log)
+boehm-compile: $(CLASP_APP_RESOURCES_LIB_COMMON_DIR)/lib/libgc.a
 .PHONY: boehm-compile
 
-export LIBATOMIC_OPS_CONFIGURE=src/boehm/libatomic_ops/configure
-export BDWGC_CONFIGURE=src/boehm/bdwgc/configure
-boehm:
-	@if test ! -e $(LIBATOMIC_OPS_CONFIGURE); then $(MAKE) libatomic-setup ; fi
-	@if test ! -e $(CLASP_INTERNAL_BUILD_TARGET_DIR)/Contents/Resources/lib/common/lib/libatomic_ops.a ; then $(MAKE) libatomic-compile ; fi
-	@if test ! -e $(BDWGC_CONFIGURE); then $(MAKE) boehm-setup ; fi
-	@if test ! -e $(CLASP_INTERNAL_BUILD_TARGET_DIR)/Contents/Resources/lib/common/lib/libgc.a ; then $(MAKE) boehm-compile ; fi
+boehm: boehm-compile
 .PHONY: boehm
 
+submodule-asdf: .gitmodules
+	-git submodule update --init src/lisp/modules/asdf
+.PHONY: submodule-asdf
+
+submodule-sicl: .gitmodules
+	-git submodule update --init src/lisp/kernel/contrib/sicl
+.PHONY: submodule-sicl
+
+copy-lisp: boost_build submodule-asdf submodule-sicl
+	(cd src/lisp; $(BJAM) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp gc=boehm bundle )
+.PHONY: copy-lisp
+
+$(CLASP_APP_EXECS)/boehm/release/bin/clasp: boost_build boehm
+	(cd src/main; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/$(VARIANT) gc=boehm $(VARIANT) clasp_install )
+boehm-cxx: $(CLASP_APP_EXECS)/boehm/release/bin/clasp
+.PHONY: boehm-cxx
+
+$(CLASP_APP_RESOURCES_DIR)/lisp/build/system/min-boehm/image.o: boehm-cxx
+	$(MAKE) -C src/main min-boehm
+min-boehm: $(CLASP_APP_RESOURCES_DIR)/lisp/build/system/min-boehm/image.o
+.PHONY: min-boehm
+
+$(CLASP_APP_RESOURCES_DIR)/lisp/build/system/full-boehm/image.o: min-boehm
+	$(MAKE) -C src/main bclasp-boehm-bitcode
+	$(MAKE) -C src/main bclasp-boehm-fasl
+full-boehm: $(CLASP_APP_RESOURCES_DIR)/lisp/build/system/full-boehm/image.o
+.PHONY: full-boehm
+
+$(CLASP_APP_RESOURCES_DIR)/lisp/build/system/cclasp-boehm/image.o: full-boehm
+	$(MAKE) -C src/main cclasp-from-bclasp-boehm-bitcode
+	$(MAKE) -C src/main cclasp-boehm-fasl
+cclasp-boehm: $(CLASP_APP_RESOURCES_DIR)/lisp/build/system/cclasp-boehm/image.o
+.PHONY: cclasp-boehm
+
+CCLASP_BOEHM_MODULES = $(CLASP_APP_RESOURCES_DIR)/lisp/build/system/cclasp-boehm/modules
+$(CCLASP_BOEHM_MODULES)/serve-event/serve-event.o $(CCLASP_BOEHM_MODULES)/asdf/asdf.o: cclasp-boehm
+	$(MAKE) -C src/main cclasp-boehm-addons
 
 boehm-release-clbind:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/release gc=boehm release clasp-clbind-install)
@@ -307,9 +364,11 @@ submodules-mps:
 	-git submodule update --init src/mps
 .PHONY: submodules-mps
 
-asdf:
-	(cd src/lisp/modules/asdf; $(MAKE))
+asdf: src/lisp/modules/asdf/build/asdf.lisp
 .PHONY: asdf
+
+src/lisp/modules/asdf/build/asdf.lisp: 
+	(cd src/lisp/modules/asdf; $(MAKE))
 
 #
 # Tell ASDF where to find the SICL/Code/Cleavir systems - the final // means search subdirs
@@ -349,14 +408,15 @@ devshell-telemetry:
 .PHONY: devshell-telemetry
 
 
-boost_build:
-	@if test ! -e $(BOOST_BUILD_INSTALL)/bin/bjam ; then $(MAKE) boost_build-compile ; fi
+submodule-boost: .gitmodules
+	-git submodule update --init tools/boost_build
+
+boost_build: $(BOOST_BUILD_INSTALL)/bin/bjam
 .PHONY: boost_build
 
-boost_build-compile:
+$(BOOST_BUILD_INSTALL)/bin/bjam: submodule-boost
 	install -d $(BOOST_BUILD_INSTALL)
 	(cd $(BOOST_BUILD_SOURCE_DIR); export BOOST_BUILD_PATH=`pwd`; ./bootstrap.sh; ./b2 toolset=clang install --prefix=$(BOOST_BUILD_INSTALL) --ignore-site-config)
-.PHONY: boost_build-compile
 
 clean:
 	git submodule sync
