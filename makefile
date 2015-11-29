@@ -168,11 +168,13 @@ all:
 	$(MAKE) -C src/main cclasp-boehm-addons
 	$(MAKE) executable-symlinks
 	echo Clasp is now built
+.PHONY: all
 
 mps-build:
 	(cd src/main; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/mps/release gc=mps release clasp_install )
 	(cd src/main; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/mps/debug gc=mps debug clasp_install )
 	$(MAKE) -C src/main link-min-mps
+.PHONY: mps-build
 
 boot:
 	$(MAKE) submodules
@@ -185,15 +187,18 @@ boot:
 	$(MAKE) -C src/main bclasp-boehmdc-bitcode
 	$(MAKE) -C src/main bclasp-boehmdc-fasl
 	$(MAKE) -C src/main bclasp-boehmdc-addons
+.PHONY: boot
 
 boot-mps-interface:
 	$(MAKE) boot
 	$(MAKE) -C src/main mps-interface
 #	$(MAKE) -C src/main bclasp-boehmdc
 #	$(MAKE) -C src/main bclasp-boehmdc-addons
+.PHONY: boot-mps-interface
 
 clasp-libraries:
 	(cd src/gctools; $(BJAM) link=$(LINK) program=clasp gctools install-lib)
+.PHONY: clasp-libraries
 
 executable-symlinks:
 	install -d $(BINDIR)
@@ -203,6 +208,7 @@ executable-symlinks:
 	ln -sf ../Contents/execs/boehm/debug/bin/clasp $(BINDIR)/clasp_boehm_d
 	ln -sf ../Contents/execs/boehmdc/debug/bin/clasp $(BINDIR)/clasp_boehmdc_d
 	ln -sf ../Contents/execs/mps/debug/bin/clasp $(BINDIR)/clasp_mps_d
+.PHONY: executable-symlinks
 
 libatomic-setup:
 	-(cd $(LIBATOMIC_OPS_SOURCE_DIR); autoreconf -vif)
@@ -212,10 +218,12 @@ libatomic-setup:
 		export ALL_INTERIOR_PTRS=1; \
 		CFLAGS="-DUSE_MMAP -g" \
 		./configure --enable-shared=yes --enable-static=yes --enable-handle-fork --enable-cplusplus --prefix=$(CLASP_APP_RESOURCES_LIB_COMMON_DIR);)
+.PHONY: libatomic-setup
 
 libatomic-compile:
 	(cd $(LIBATOMIC_OPS_SOURCE_DIR); $(MAKE) -j$(PJOBS) | tee _libatomic_ops.log)
 	(cd $(LIBATOMIC_OPS_SOURCE_DIR); $(MAKE) -j$(PJOBS) install | tee _libatomic_ops_install.log)
+.PHONY: libatomic-compile
 
 boehm-setup:
 	-(cd $(BOEHM_SOURCE_DIR); autoreconf -vif)
@@ -227,10 +235,12 @@ boehm-setup:
                 CFLAGS="-DUSE_MMAP -g" \
 		PKG_CONFIG_PATH=$(CLASP_APP_RESOURCES_LIB_COMMON_DIR)/lib/pkgconfig/ \
 		./configure --enable-shared=yes --enable-static=yes --enable-handle-fork --enable-cplusplus --prefix=$(CLASP_APP_RESOURCES_LIB_COMMON_DIR) --with-libatomic-ops=yes;)
+.PHONY: boehm-setup
 
 boehm-compile:
 	(cd $(BOEHM_SOURCE_DIR); $(MAKE) -j$(PJOBS) | tee _boehm.log)
 	(cd $(BOEHM_SOURCE_DIR); $(MAKE) -j$(PJOBS) install | tee _boehm_install.log)
+.PHONY: boehm-compile
 
 export LIBATOMIC_OPS_CONFIGURE=src/boehm/libatomic_ops/configure
 export BDWGC_CONFIGURE=src/boehm/bdwgc/configure
@@ -239,39 +249,49 @@ boehm:
 	@if test ! -e $(CLASP_INTERNAL_BUILD_TARGET_DIR)/Contents/Resources/lib/common/lib/libatomic_ops.a ; then $(MAKE) libatomic-compile ; fi
 	@if test ! -e $(BDWGC_CONFIGURE); then $(MAKE) boehm-setup ; fi
 	@if test ! -e $(CLASP_INTERNAL_BUILD_TARGET_DIR)/Contents/Resources/lib/common/lib/libgc.a ; then $(MAKE) boehm-compile ; fi
+.PHONY: boehm
 
 
 boehm-release-clbind:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/release gc=boehm release clasp-clbind-install)
+.PHONY: boehm-release-clbind
 
 boehm-release-clbind-a:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/release gc=boehm release clasp-clbind-install -a)
+.PHONY: boehm-release-clbind-a
 
 boehm-debug-clbind:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/debug gc=boehm debug clasp-clbind-install)
+.PHONY: boehm-debug-clbind
 
 boehm-debug-clbind-a:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/debug gc=boehm debug clasp-clbind-install -a)
+.PHONY: boehm-debug-clbind-a
 
 boehmdc-release-clbind:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehmdc/release gc=boehmdc release clasp-clbind-install)
+.PHONY: boehmdc-release-clbind
 
 mps-clbind:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/mps/$(VARIANT) gc=mps $(VARIANT) clasp-clbind-install)
+.PHONY: mps-clbind
 
 boehm-clean:
 	install -d $(BOEHM_SOURCE_DIR)
 	-(cd $(BOEHM_SOURCE_DIR); $(MAKE) clean )
 	if test -e $(LIBATOMIC_OPS_CONFIGURE); then rm $(LIBATOMIC_OPS_CONFIGURE) ; fi
 	if test	-e $(BDWGC_CONFIGURE); then rm $(BDWGC_CONFIGURE) ; fi
+.PHONY: boehm-clean
 
 pump:
 	(cd src/core; $(MAKE) pump)
 	(cd src/clbind; $(MAKE) pump)
+.PHONY: pump
 
 submodules:
 	$(MAKE) submodules-boehm
 	$(MAKE) submodules-mps
+.PHONY: submodules
 
 submodules-boehm:
 	-git submodule update --init tools/boost_build
@@ -281,13 +301,15 @@ submodules-boehm:
 	-git submodule update --init src/lisp/modules/asdf
 	-git submodule update --init tools/boost_build
 #	-(cd src/lisp/modules/asdf; git checkout master; git pull origin master)
+.PHONY: submodules-boehm
 
 submodules-mps:
 	-git submodule update --init src/mps
+.PHONY: submodules-mps
 
 asdf:
 	(cd src/lisp/modules/asdf; $(MAKE))
-
+.PHONY: asdf
 
 #
 # Tell ASDF where to find the SICL/Code/Cleavir systems - the final // means search subdirs
@@ -305,30 +327,36 @@ devemacs:
 	@echo This shell sets up environment variables like BJAM
 	@echo as they are defined when commands execute within the makefile
 	(CLASP_LISP_SOURCE_DIR=$(DEV_CLASP_LISP_SOURCE_DIR) $(DEVEMACS))
+.PHONY: devemacs
 
 devemacs_no_clasp_lisp_source_dir:
 	@echo This shell sets up environment variables like BJAM
 	@echo as they are defined when commands execute within the makefile
 	$(DEVEMACS)
+.PHONY: devemacs_no_clasp_lisp_source_dir
 
 devshell:
 	@echo This shell sets up environment variables like BJAM
 	@echo as they are defined when commands execute within the makefile
 	(CLASP_LISP_SOURCE_DIR=$(DEV_CLASP_LISP_SOURCE_DIR) bash)
+.PHONY: devshell
 
 
 devshell-telemetry:
 	@echo This shell sets up environment variables like BJAM
 	@echo as they are defined when commands execute within the makefile
 	(CLASP_LISP_SOURCE_DIR=$(DEV_CLASP_LISP_SOURCE_DIR); export CLASP_MPS_CONFIG="32 32 16 80 32 80"; export CLASP_TELEMETRY_FILE=/tmp/clasp.tel; export CLASP_TELEMETRY_MASK=3; bash)
+.PHONY: devshell-telemetry
 
 
 boost_build:
 	@if test ! -e $(BOOST_BUILD_INSTALL)/bin/bjam ; then $(MAKE) boost_build-compile ; fi
+.PHONY: boost_build
 
 boost_build-compile:
 	install -d $(BOOST_BUILD_INSTALL)
 	(cd $(BOOST_BUILD_SOURCE_DIR); export BOOST_BUILD_PATH=`pwd`; ./bootstrap.sh; ./b2 toolset=clang install --prefix=$(BOOST_BUILD_INSTALL) --ignore-site-config)
+.PHONY: boost_build-compile
 
 clean:
 	git submodule sync
@@ -346,23 +374,29 @@ ifneq ($(CLASP_INTERNAL_BUILD_TARGET_DIR),)
 	install -d $(CLASP_INTERNAL_BUILD_TARGET_DIR)
 	-(find $(CLASP_INTERNAL_BUILD_TARGET_DIR) -type f -print0 | xargs -0 rm -f)
 endif
+.PHONY: clean
 
 setup-cleavir:
 	clasp_boehm_o -f bclasp -l src/lisp/kernel/cleavir/setup-cclasp-build.lisp -e "(core:quit)"
+.PHONY: setup-cleavir
 
 pull-sicl-master:
 	(cd src/lisp/kernel/contrib/sicl; git pull origin master)
 	$(MAKE) setup-cleavir
+.PHONY: pull-sicl-master
 
 mps-submodule:
 	git submodule add -b dev/2014-08-18/non-incremental  https://github.com/Ravenbrook/mps-temporary ./src/mps
+.PHONY: mps-submodule
 
 
 asdf-submodule:
 	git submodule add --name updatedAsdf https://github.com/drmeister/asdf.git ./src/lisp/kernel/asdf
+.PHONY: asdf-submodule
 
 dump-local-config:
 	cat $(CLASP_HOME)/local.config
+.PHONY: dump-local-config
 
 print-config:
 	$(info >> Makefile Configuration:)
@@ -404,8 +438,10 @@ print-config:
 	$(call varprint, EXECS)
 	$(call varprint, PATH)
 	$(call varprint, USE_CXXFLAGS)
+.PHONY: print-config
 
 clang-format:
 	git ls-files src/ include/ \
 	| perl -ne 'chomp;print "$$_\n" if -f $$_ and (/\.[hc][hcp]?p?$$/) and !-l and !m#^include/.+/generated#;' \
 	| xargs -P$(PJOBS) -n1 --verbose clang-format -i
+.PHONY: clang-format
