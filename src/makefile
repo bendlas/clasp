@@ -8,13 +8,13 @@ sa subAll subInstall subClean subClassTree sct subBundle sb subMeta sm sad:
 SRC-SUB-DIRS = gctools core cffi clbind asttooling llvmo serveEvent sockets
 
 sub-prebuild:
-	make -C gctools/ $@
-	make -C core/ $@
-	make -C clbind/ $@
-	make -C llvmo/ $@
-	make -C asttooling/ $@
-	make -C serveEvent/ $@
-	make -C sockets/ $@
+	$(MAKE) -C gctools/ $@
+	$(MAKE) -C core/ $@
+	$(MAKE) -C clbind/ $@
+	$(MAKE) -C llvmo/ $@
+	$(MAKE) -C asttooling/ $@
+	$(MAKE) -C serveEvent/ $@
+	$(MAKE) -C sockets/ $@
 
 
 

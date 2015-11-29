@@ -20,8 +20,8 @@ export CLASP_APP_RESOURCES_DIR=$(CLASP_INTERNAL_BUILD_TARGET_DIR)/Contents/Resou
 
 
 clasp:
-	make clasp-release
-	make clasp-debug
+	$(MAKE) clasp-release
+	$(MAKE) clasp-debug
 
 clasp-debug:
 	build -j$(PJOBS) gc=boehm link=static program=clasp release debug
@@ -30,8 +30,8 @@ clasp-release:
 	build -j$(PJOBS) gc=boehm link=static program=clasp release release
 
 all:
-	make boehm
-#	make mps
+	$(MAKE) boehm
+#	$(MAKE) mps
 
 
 link-cclasp-mps:
@@ -41,12 +41,12 @@ application:
 	cp -R $(CLASP_INTERNAL_BUILD_TARGET_DIR) $(CLASP_APP_DIR)
 
 boehm-cleavir:
-	make boehm
-	make cclasp
+	$(MAKE) boehm
+	$(MAKE) cclasp
 
 cclasp-boehm-with-addons:
-	make cclasp-boehm
-	make cclasp-boehm-addons
+	$(MAKE) cclasp-boehm
+	$(MAKE) cclasp-boehm-addons
 
 clasp-reload:
 	$(BCLASP_BOEHM) -l "buildCleavirClaspReload.lsp"
@@ -75,7 +75,7 @@ link-min-mps:
 link-cclasp-mps-addons:
 	$(CCLASP_MPS) -l "link_addons.lsp"
 
-#	make clasp-gc-interface
+#	$(MAKE) clasp-gc-interface
 
 
 boehmdc-release-cxx:
@@ -135,8 +135,8 @@ cclasp-boehmdc-bitcode:
 cclasp-boehmdc-fasl:
 	$(BCLASP_BOEHMDC) -f ecl-min -e "(link-cclasp :force t)" -e "(quit)"
 bclasp-boehm:
-	make bclasp-boehm-bitcode
-	make bclasp-boehm-fasl
+	$(MAKE) bclasp-boehm-bitcode
+	$(MAKE) bclasp-boehm-fasl
 
 bclasp-boehm-bitcode:
 	$(BCLASP_BOEHM) -f ecl-min -e "(compile-bclasp)" -e "(quit)"
@@ -154,8 +154,8 @@ cclasp-from-bclasp-boehm-bitcode:
 	$(BCLASP_BOEHM) -l "buildCleavirClasp.lsp"
 
 cclasp-boehm:
-	make cclasp-from-bclasp-boehm-bitcode
-	make cclasp-boehm-fasl
+	$(MAKE) cclasp-from-bclasp-boehm-bitcode
+	$(MAKE) cclasp-boehm-fasl
 
 cclasp-boehm-bitcode:
 	$(BCLASP_BOEHM) -f ecl-min -e "(compile-cclasp)" -e "(quit)"
@@ -192,7 +192,7 @@ run-clasp:
 
 mps-interface-clasp:
 	@echo Generating compile-commands
-	make compile-commands
+	$(MAKE) compile-commands
 	@echo Running parallel search and generating code when done
 	$(BCLASP_BOEHM) -l "sys:mps-interface.lsp" -e "(parallel-search-all-then-generate-code-and-quit)"
 
@@ -211,5 +211,5 @@ mps-interface-run:
 mps-interface:
 	@echo Building mps-prep
 	build -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/mps-prep/$(VARIANT) gc=mps-prep release clasp_install
-	make compile-commands
-	make mps-interface-run
+	$(MAKE) compile-commands
+	$(MAKE) mps-interface-run
