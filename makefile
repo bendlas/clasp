@@ -308,6 +308,8 @@ cclasp-boehm: $(CLASP_APP_RESOURCES_DIR)/lisp/build/system/cclasp-boehm/image.o
 CCLASP_BOEHM_MODULES = $(CLASP_APP_RESOURCES_DIR)/lisp/build/system/cclasp-boehm/modules
 $(CCLASP_BOEHM_MODULES)/serve-event/serve-event.o $(CCLASP_BOEHM_MODULES)/asdf/asdf.o: cclasp-boehm
 	$(MAKE) -C src/main cclasp-boehm-addons
+cclasp-boehm-addons: $(CCLASP_BOEHM_MODULES)/serve-event/serve-event.o $(CCLASP_BOEHM_MODULES)/asdf/asdf.o
+.PHONY: cclasp-boehm-addons
 
 boehm-release-clbind:
 	(cd src/clbind; $(BUILD) -j$(PJOBS) toolset=$(TOOLSET) link=$(LINK) program=clasp --prefix=$(CLASP_APP_EXECS)/boehm/release gc=boehm release clasp-clbind-install)
