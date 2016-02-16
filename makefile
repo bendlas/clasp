@@ -61,6 +61,7 @@ export LLVM_CONFIG_DEBUG ?= $(or $(wildcard $(EXTERNALS_CLASP_DIR)/build/debug/b
                                  $(LLVM_CONFIG))
 
 export LLVM_BIN_DIR ?= $(shell $(LLVM_CONFIG_RELEASE) --bindir)
+export CLANG_BIN_DIR ?= $(LLVM_BIN_DIR)
 
 export CLASP_INTERNAL_BUILD_TARGET_DIR ?= $(shell pwd)/build/clasp
 
@@ -104,8 +105,8 @@ ifeq ($(TARGET_OS),Darwin)
 endif
 
 ifeq ($(TARGET_OS),Linux)
-  export BOEHM_CC = $(LLVM_BIN_DIR)/clang
-  export BOEHM_CXX = $(LLVM_BIN_DIR)/clang++
+  export BOEHM_CC = $(CLANG_BIN_DIR)/clang
+  export BOEHM_CXX = $(CLANG_BIN_DIR)/clang++
 endif
 
 include_flags := $(foreach dir,$(INCLUDE_DIRS),$(and $(wildcard $(dir)),-I$(dir)))

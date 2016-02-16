@@ -55,6 +55,7 @@
 ## You probably don't want to mess with these
 ## unless you know what you're doing.
 #export LLVM_BIN_DIR
+#export CLANG_BIN_DIR
 #export GIT_COMMIT
 #export CLASP_VERSION
 #export CLASP_INTERNAL_BUILD_TARGET_DIR
